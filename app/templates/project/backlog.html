@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Sızma Testi Yönetimi{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12 d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fs-2">{{ title }}</h1>
+        <div>
+            <a href="{{ url_for('project.new') }}" class="btn btn-primary"><i class="fas fa-plus me-1"></i> Yeni Proje</a>
+            <a href="{{ url_for('project.index') }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i> Aktif Projelere Dön</a>
+        </div>
+    </div>
+</div>
+
+<!-- Filtreler -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fs-5"><i class="fas fa-filter me-2"></i>Filtreler</h5>
+                <button id="clear-filters" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-eraser me-1"></i>Temizle
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold"><i class="fas fa-tags me-1"></i> Etiketler</label>
+                            <div id="tag-filters" class="d-flex flex-wrap"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold"><i class="fas fa-sort-amount-down me-1"></i> Öncelik</label>
+                            <div class="btn-group">
+                                <button data-filter="priority" data-value="all" class="btn btn-sm btn-outline-secondary priority-filter active">Tümü</button>
+                                <button data-filter="priority" data-value="high" class="btn btn-sm btn-outline-secondary priority-filter">Yüksek (7-10)</button>
+                                <button data-filter="priority" data-value="medium" class="btn btn-sm btn-outline-secondary priority-filter">Orta (4-6)</button>
+                                <button data-filter="priority" data-value="low" class="btn btn-sm btn-outline-secondary priority-filter">Düşük (0-3)</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 fs-5">Backlog Projeleri</h5>
+            </div>
+            <div class="card-body">
+                {% if projects %}
+                <div class="table-responsive">
+                    <table id="backlog-table" class="table table-hover border">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Öncelik</th>
+                                <th>Proje Adı</th>
+                                <th>Şirket</th>
+                                <th>Proje Yöneticisi</th>
+                                <th>Proje Türü</th>
+                                <th>Adam-Gün</th>
+                                <th>Etiketler</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for project in projects %}
+                            <tr class="project-row" 
+                                data-priority="{{ project.priority }}"
+                                data-tags="{{ project.get_tags_list()|join(',') }}">
+                                <td>
+                                    {% if project.priority > 7 %}
+                                        <span class="badge border border-danger text-danger bg-danger-subtle">{{ project.priority }}</span>
+                                    {% elif project.priority > 3 %}
+                                        <span class="badge border border-warning text-warning bg-warning-subtle">{{ project.priority }}</span>
+                                    {% else %}
+                                        <span class="badge border border-info text-info bg-info-subtle">{{ project.priority }}</span>
+                                    {% endif %}
+                                </td>
+                                <td><strong>{{ project.name }}</strong></td>
+                                <td>{{ project.company.name }}</td>
+                                <td>{{ project.manager }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ project.project_type }}</span></td>
+                                <td>{{ project.mandays }}</td>
+                                <td>
+                                    {% if project.tags %}
+                                        {% for tag in project.get_tags_list() %}
+                                            <a href="#" class="badge bg-light text-dark border text-decoration-none tag-badge" data-tag="{{ tag }}">{{ tag }}</a>
+                                        {% endfor %}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('project.view', id=project.id) }}" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('project.edit', id=project.id) }}" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form action="{{ url_for('project.remove_from_backlog', id=project.id) }}" method="post" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Backlog'dan çıkar">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>Backlog'da henüz proje bulunmuyor.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Filtre durumunu saklamak için
+        const activeFilters = {
+            tags: [],
+            priority: 'all'
+        };
+
+        // Tüm etiketleri topla
+        const allTags = new Set();
+        document.querySelectorAll('.tag-badge').forEach(tag => {
+            allTags.add(tag.dataset.tag);
+        });
+        
+        // Etiket filtrelerini oluştur
+        const tagFiltersContainer = document.getElementById('tag-filters');
+        if (tagFiltersContainer && allTags.size > 0) {
+            let filterHtml = '';
+            allTags.forEach(tag => {
+                filterHtml += `<button class="btn btn-sm btn-outline-secondary me-1 mb-1 tag-filter" data-tag="${tag}">${tag}</button>`;
+            });
+            tagFiltersContainer.innerHTML = filterHtml;
+        } else if (tagFiltersContainer) {
+            tagFiltersContainer.innerHTML = '<p class="text-muted mb-0">Henüz etiket bulunmuyor.</p>';
+        }
+
+        // Etiket filtreleme işlevselliği
+        document.querySelectorAll('.tag-filter').forEach(button => {
+            button.addEventListener('click', function() {
+                const tag = this.dataset.tag;
+                
+                // Etiket zaten aktif filtreler içinde mi kontrol et
+                const tagIndex = activeFilters.tags.indexOf(tag);
+                
+                if (tagIndex === -1) {
+                    // Aktif değilse ekle
+                    activeFilters.tags.push(tag);
+                    this.classList.remove('btn-outline-secondary');
+                    this.classList.add('btn-secondary');
+                } else {
+                    // Aktifse çıkar
+                    activeFilters.tags.splice(tagIndex, 1);
+                    this.classList.remove('btn-secondary');
+                    this.classList.add('btn-outline-secondary');
+                }
+                
+                applyFilters();
+            });
+        });
+
+        // Etiket rozeti tıklama (tablodaki etiketler)
+        document.querySelectorAll('.tag-badge').forEach(badge => {
+            badge.addEventListener('click', function(e) {
+                e.preventDefault();
+                const tag = this.dataset.tag;
+                
+                // İlgili filtreyi bul ve tıkla
+                const filterButton = document.querySelector(`.tag-filter[data-tag="${tag}"]`);
+                if (filterButton) {
+                    filterButton.click();
+                }
+            });
+        });
+
+        // Öncelik filtreleme
+        document.querySelectorAll('.priority-filter').forEach(button => {
+            button.addEventListener('click', function() {
+                const priority = this.dataset.value;
+                
+                // Aktif sınıfını diğer öncelik filtrelerinden kaldır
+                document.querySelectorAll('.priority-filter').forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.classList.add('btn-outline-secondary');
+                });
+                
+                // Bu filtreyi aktifleştir
+                this.classList.add('active');
+                this.classList.remove('btn-outline-secondary');
+                this.classList.add('btn-secondary');
+                
+                activeFilters.priority = priority;
+                applyFilters();
+            });
+        });
+
+        // Filtreleri temizle butonu
+        document.getElementById('clear-filters').addEventListener('click', function() {
+            // Etiket filtrelerini sıfırla
+            activeFilters.tags = [];
+            document.querySelectorAll('.tag-filter').forEach(btn => {
+                btn.classList.remove('btn-secondary');
+                btn.classList.add('btn-outline-secondary');
+            });
+            
+            // Öncelik filtresini "Tümü" olarak ayarla
+            activeFilters.priority = 'all';
+            document.querySelectorAll('.priority-filter').forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.add('btn-outline-secondary');
+            });
+            document.querySelector('.priority-filter[data-value="all"]').classList.remove('btn-outline-secondary');
+            document.querySelector('.priority-filter[data-value="all"]').classList.add('active', 'btn-secondary');
+            
+            applyFilters();
+        });
+
+        // Filtreleri uygula
+        function applyFilters() {
+            const projectRows = document.querySelectorAll('.project-row');
+            
+            projectRows.forEach(row => {
+                let showRow = true;
+                
+                // Etiket filtresi kontrolü
+                if (activeFilters.tags.length > 0) {
+                    const projectTags = row.dataset.tags.split(',').filter(t => t.length > 0);
+                    
+                    // En az bir eşleşen etiket olmalı
+                    const hasMatchingTag = activeFilters.tags.some(tag => projectTags.includes(tag));
+                    
+                    if (!hasMatchingTag) {
+                        showRow = false;
+                    }
+                }
+                
+                // Öncelik filtresi kontrolü
+                if (activeFilters.priority !== 'all') {
+                    const priority = parseInt(row.dataset.priority);
+                    
+                    if (activeFilters.priority === 'high' && priority < 7) {
+                        showRow = false;
+                    } else if (activeFilters.priority === 'medium' && (priority < 4 || priority > 6)) {
+                        showRow = false;
+                    } else if (activeFilters.priority === 'low' && priority > 3) {
+                        showRow = false;
+                    }
+                }
+                
+                // Görünürlüğü ayarla
+                row.style.display = showRow ? '' : 'none';
+            });
+            
+            // Görünür proje sayısını kontrol et
+            const visibleRows = document.querySelectorAll('.project-row:not([style*="display: none"])').length;
+            const table = document.getElementById('backlog-table');
+            const noResults = document.querySelector('.no-results');
+            
+            if (visibleRows === 0 && table) {
+                // Sonuç yoksa mesaj göster
+                if (!noResults) {
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-info mt-3 no-results';
+                    alertDiv.innerHTML = '<i class="fas fa-info-circle me-2"></i>Seçilen kriterlere uygun proje bulunamadı.';
+                    table.parentNode.appendChild(alertDiv);
+                }
+                table.style.display = 'none';
+            } else if (table) {
+                // Sonuç varsa tabloyu göster
+                if (noResults) {
+                    noResults.remove();
+                }
+                table.style.display = '';
+            }
+        }
+    });
+</script>
+{% endblock %} 

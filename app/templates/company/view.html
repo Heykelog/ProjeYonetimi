@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ company.name }} - Sızma Testi Yönetimi{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12 d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ company.name }}</h1>
+        <div>
+            <a href="{{ url_for('company.edit', id=company.id) }}" class="btn btn-warning">Şirketi Düzenle</a>
+            <a href="{{ url_for('company.index') }}" class="btn btn-secondary">Şirketlere Dön</a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Şirket Bilgileri</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Şirket ID:</dt>
+                    <dd class="col-sm-8">{{ company.id }}</dd>
+                    
+                    <dt class="col-sm-4">İsim:</dt>
+                    <dd class="col-sm-8">{{ company.name }}</dd>
+                    
+                    <dt class="col-sm-4">Toplam Adam-Gün:</dt>
+                    <dd class="col-sm-8">{{ company.total_mandays }}</dd>
+                    
+                    <dt class="col-sm-4">Kullanılan Adam-Gün:</dt>
+                    <dd class="col-sm-8">{{ company.total_mandays - company.remaining_mandays() }}</dd>
+                    
+                    <dt class="col-sm-4">Kalan Adam-Gün:</dt>
+                    <dd class="col-sm-8">{{ company.remaining_mandays() }}</dd>
+                </dl>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Projeler</h5>
+                <a href="{{ url_for('project.new') }}" class="btn btn-sm btn-primary">Proje Ekle</a>
+            </div>
+            <div class="card-body">
+                {% if company.projects %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>İsim</th>
+                                <th>Yönetici</th>
+                                <th>Pentest Tarihi</th>
+                                <th>Adam-Gün (Plan/Toplam)</th>
+                                <th>Durum</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for project in company.projects %}
+                            <tr>
+                                <td>{{ project.name }}</td>
+                                <td>{{ project.manager }}</td>
+                                <td>{{ project.pentest_date.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    {{ project.mandays }}
+                                    {% if project.extra_mandays and project.extra_mandays > 0 %}
+                                        / {{ project.mandays + project.extra_mandays }}
+                                        <i class="fas fa-info-circle text-warning" title="Ek adam-gün: {{ project.extra_mandays }} ({{ project.extra_mandays_reason }})"></i>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if project.completed %}
+                                    <span class="badge bg-success">Tamamlandı</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Devam Ediyor</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('project.view', id=project.id) }}" class="btn btn-sm btn-info">Görüntüle</a>
+                                        <a href="{{ url_for('finding.index', project_id=project.id) }}" class="btn btn-sm btn-primary">Bulgular</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    Bu şirket için hiç proje bulunamadı.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Adam-Gün Kullanımı</h5>
+            </div>
+            <div class="card-body">
+                <div class="progress mb-3" style="height: 30px;">
+                    {% set percentage = ((company.total_mandays - company.remaining_mandays()) / company.total_mandays * 100) if company.total_mandays > 0 else 0 %}
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ percentage }}%;" 
+                         aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100">
+                        {{ percentage|round(1) }}%
+                    </div>
+                </div>
+                <p class="text-center">{{ company.total_mandays }} adam-gün içinden {{ company.total_mandays - company.remaining_mandays() }} adam-gün kullanıldı</p>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Proje Durumları</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="display-6">{{ company.completed_projects_count() }}</div>
+                        <p>Tamamlanan Projeler</p>
+                    </div>
+                    <div class="col-6">
+                        <div class="display-6">{{ company.ongoing_projects_count() }}</div>
+                        <p>Devam Eden Projeler</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5>Bulgular Genel Bakış</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    {% set severity_counts = company.findings_by_severity() %}
+                    <div class="col-3">
+                        <div class="text-danger display-6">{{ severity_counts['Critical'] }}</div>
+                        <p>Kritik</p>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-warning display-6">{{ severity_counts['High'] }}</div>
+                        <p>Yüksek</p>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-primary display-6">{{ severity_counts['Medium'] }}</div>
+                        <p>Orta</p>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-success display-6">{{ severity_counts['Low'] }}</div>
+                        <p>Düşük</p>
+                    </div>
+                </div>
+                <hr>
+                <div class="text-center">
+                    <div class="display-6">{{ company.total_findings_count() }}</div>
+                    <p>Toplam Bulgular</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

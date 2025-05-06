@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Sızma Testi Yönetimi{% endblock %}
+
+{% block extra_css %}
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+<style>
+    #calendar {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .calendar-container {
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .fc-event {
+        cursor: pointer;
+    }
+    .fc-event-title {
+        font-weight: bold;
+    }
+    .calendar-legend {
+        margin-top: 15px;
+        padding: 10px;
+        border-radius: 5px;
+        background-color: #f8f9fa;
+    }
+    .legend-item {
+        margin-right: 20px;
+        display: inline-flex;
+        align-items: center;
+    }
+    .legend-color {
+        width: 15px;
+        height: 15px;
+        display: inline-block;
+        margin-right: 5px;
+        border-radius: 3px;
+    }
+    .completed { background-color: #28a745; }
+    .ongoing { background-color: #ffc107; }
+    .today { background-color: #dc3545; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12 d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ title }}</h1>
+        <div>
+            <a href="{{ url_for('project.index') }}" class="btn btn-secondary">Projeler Listesine Dön</a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card calendar-container">
+            <div id="calendar"></div>
+            
+            <div class="calendar-legend">
+                <div class="legend-item">
+                    <span class="legend-color completed"></span>
+                    <span>Tamamlanan Projeler</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color ongoing"></span>
+                    <span>Devam Eden Projeler</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color today"></span>
+                    <span>Bugün Başlayan Projeler</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/tr.js'></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek'
+            },
+            initialView: 'dayGridMonth',
+            locale: 'tr',
+            firstDay: 1, // Pazartesi haftanın ilk günü
+            eventTimeFormat: {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            },
+            events: "{{ url_for('project.calendar_events') }}",
+            loading: function(isLoading) {
+                if (isLoading) {
+                    // Yükleniyor mesajı gösterilebilir
+                } else {
+                    // Yükleniyor mesajı gizlenebilir
+                }
+            },
+            eventDidMount: function(info) {
+                // Tooltip eklemek için bootstrap tooltip kullanabilirsiniz
+                var tooltip = new bootstrap.Tooltip(info.el, {
+                    title: `${info.event.extendedProps.company}<br>
+                           Yönetici: ${info.event.extendedProps.manager}<br>
+                           Adam Gün: ${info.event.extendedProps.mandays}<br>
+                           Tür: ${info.event.extendedProps.project_type}<br>
+                           Durum: ${info.event.extendedProps.completed ? 'Tamamlandı' : 'Devam Ediyor'}`,
+                    placement: 'top',
+                    trigger: 'hover',
+                    html: true,
+                    container: 'body'
+                });
+            }
+        });
+        
+        calendar.render();
+    });
+</script>
+{% endblock %} 

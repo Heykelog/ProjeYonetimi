@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ company.name }} Raporu - Sızma Testi Yönetimi{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12 d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ company.name }} - Detaylı Rapor</h1>
+        <div>
+            <a href="{{ url_for('report.export_company_report', company_id=company.id) }}" class="btn btn-success">CSV Olarak İndir</a>
+            <a href="{{ url_for('report.index') }}" class="btn btn-secondary">Raporlara Dön</a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Şirket Genel Bakış</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-6">Toplam Adam-Gün:</dt>
+                    <dd class="col-sm-6">{{ company.total_mandays }}</dd>
+                    
+                    <dt class="col-sm-6">Kullanılan Adam-Gün:</dt>
+                    <dd class="col-sm-6">{{ company.total_mandays - company.remaining_mandays() }}</dd>
+                    
+                    {% set total_extra_mandays = 0 %}
+                    {% for project in projects %}
+                        {% if project.extra_mandays %}
+                            {% set total_extra_mandays = total_extra_mandays + project.extra_mandays %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <dt class="col-sm-6">Ek Adam-Gün:</dt>
+                    <dd class="col-sm-6">{{ total_extra_mandays }}</dd>
+                    
+                    <dt class="col-sm-6">Kalan Adam-Gün:</dt>
+                    <dd class="col-sm-6">{{ company.remaining_mandays() }}</dd>
+                    
+                    <dt class="col-sm-6">Tamamlanan Projeler:</dt>
+                    <dd class="col-sm-6">{{ company.completed_projects_count() }}</dd>
+                    
+                    <dt class="col-sm-6">Devam Eden Projeler:</dt>
+                    <dd class="col-sm-6">{{ company.ongoing_projects_count() }}</dd>
+                    
+                    <dt class="col-sm-6">Toplam Bulgular:</dt>
+                    <dd class="col-sm-6">{{ company.total_findings_count() }}</dd>
+                </dl>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Adam-Gün Kullanımı</h5>
+            </div>
+            <div class="card-body">
+                <div class="progress mb-3" style="height: 30px;">
+                    {% set percentage = ((company.total_mandays - company.remaining_mandays()) / company.total_mandays * 100) if company.total_mandays > 0 else 0 %}
+                    {% set base_percentage = ((company.total_mandays - company.remaining_mandays() - total_extra_mandays) / company.total_mandays * 100) if company.total_mandays > 0 else 0 %}
+                    {% set extra_percentage = (total_extra_mandays / company.total_mandays * 100) if company.total_mandays > 0 else 0 %}
+                    
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ base_percentage }}%;" 
+                         aria-valuenow="{{ base_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                        {{ base_percentage|round(1) }}%
+                    </div>
+                    {% if total_extra_mandays > 0 %}
+                    <div class="progress-bar bg-info" role="progressbar" style="width: {{ extra_percentage }}%;" 
+                         aria-valuenow="{{ extra_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                        {{ extra_percentage|round(1) }}%
+                    </div>
+                    {% endif %}
+                </div>
+                <p class="text-center">
+                    {{ company.total_mandays }} adam-gün içinden 
+                    <span class="text-primary">{{ company.total_mandays - company.remaining_mandays() - total_extra_mandays }}</span> planlanan adam-gün ve 
+                    <span class="text-info">{{ total_extra_mandays }}</span> ek adam-gün olmak üzere toplam 
+                    <strong>{{ company.total_mandays - company.remaining_mandays() }}</strong> adam-gün kullanıldı
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Bulgular Önem Seviyesine Göre</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    {% set severity_counts = company.findings_by_severity() %}
+                    <div class="col-3">
+                        <div class="text-danger display-6">{{ severity_counts['Critical'] }}</div>
+                        <p>Kritik</p>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-warning display-6">{{ severity_counts['High'] }}</div>
+                        <p>Yüksek</p>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-primary display-6">{{ severity_counts['Medium'] }}</div>
+                        <p>Orta</p>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-success display-6">{{ severity_counts['Low'] }}</div>
+                        <p>Düşük</p>
+                    </div>
+                </div>
+                <hr>
+                <div class="progress mt-3" style="height: 30px;">
+                    {% set total_findings = company.total_findings_count() %}
+                    {% set critical_percentage = (severity_counts['Critical'] / total_findings * 100) if total_findings > 0 else 0 %}
+                    {% set high_percentage = (severity_counts['High'] / total_findings * 100) if total_findings > 0 else 0 %}
+                    {% set medium_percentage = (severity_counts['Medium'] / total_findings * 100) if total_findings > 0 else 0 %}
+                    {% set low_percentage = (severity_counts['Low'] / total_findings * 100) if total_findings > 0 else 0 %}
+                    
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ critical_percentage }}%;"></div>
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ high_percentage }}%;"></div>
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ medium_percentage }}%;"></div>
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ low_percentage }}%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Projeler</h5>
+            </div>
+            <div class="card-body">
+                {% if projects %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>İsim</th>
+                                <th>Yönetici</th>
+                                <th>Pentest Tarihi</th>
+                                <th>Tür</th>
+                                <th>Planlanan A/G</th>
+                                <th>Ek A/G</th>
+                                <th>Toplam A/G</th>
+                                <th>Durum</th>
+                                <th>Bulgular</th>
+                                <th>Kritik</th>
+                                <th>Yüksek</th>
+                                <th>Orta</th>
+                                <th>Düşük</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for project in projects %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('project.view', id=project.id) }}">
+                                        {{ project.name }}
+                                    </a>
+                                </td>
+                                <td>{{ project.manager }}</td>
+                                <td>{{ project.pentest_date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ project.project_type }}</td>
+                                <td>{{ project.mandays }}</td>
+                                <td>
+                                    {% if project.extra_mandays and project.extra_mandays > 0 %}
+                                    <span class="badge bg-info">{{ project.extra_mandays }}</span>
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>{{ project.mandays + (project.extra_mandays or 0) }}</strong>
+                                </td>
+                                <td>
+                                    {% if project.completed %}
+                                    <span class="badge bg-success">Tamamlandı</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Devam Ediyor</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ project.findings|length }}</td>
+                                {% set severity_counts = project.findings_by_severity() %}
+                                <td class="text-danger">{{ severity_counts['Critical'] }}</td>
+                                <td class="text-warning">{{ severity_counts['High'] }}</td>
+                                <td class="text-primary">{{ severity_counts['Medium'] }}</td>
+                                <td class="text-success">{{ severity_counts['Low'] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    Bu şirket için proje bulunamadı.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ project.name }} - Sızma Testi Yönetimi{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12 d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ project.name }}</h1>
+        <div>
+            <a href="{{ url_for('project.edit', id=project.id) }}" class="btn btn-warning">Projeyi Düzenle</a>
+            <a href="{{ url_for('finding.index', project_id=project.id) }}" class="btn btn-primary">Bulguları Görüntüle</a>
+            <a href="{{ url_for('project.index') }}" class="btn btn-secondary">Projelere Dön</a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Proje Bilgileri</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Proje ID:</dt>
+                    <dd class="col-sm-8">{{ project.id }}</dd>
+                    
+                    <dt class="col-sm-4">İsim:</dt>
+                    <dd class="col-sm-8">{{ project.name }}</dd>
+                    
+                    <dt class="col-sm-4">Şirket:</dt>
+                    <dd class="col-sm-8">
+                        <a href="{{ url_for('company.view', id=project.company.id) }}">
+                            {{ project.company.name }}
+                        </a>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Yönetici:</dt>
+                    <dd class="col-sm-8">{{ project.manager }}</dd>
+                    
+                    <dt class="col-sm-4">Pentest Tarihi:</dt>
+                    <dd class="col-sm-8">
+                        {{ project.pentest_date.strftime('%Y-%m-%d') }}
+                        <form method="post" action="{{ url_for('project.send_reminder', id=project.id) }}" class="d-inline ms-2">
+                            <button type="submit" class="btn btn-sm btn-info" title="Pentest hatırlatma e-postası gönder">
+                                <i class="fas fa-envelope"></i> Hatırlat
+                            </button>
+                        </form>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Proje Türü:</dt>
+                    <dd class="col-sm-8">
+                        {% if project.project_type == 'Project' %}
+                            Proje
+                        {% elif project.project_type == 'Small Request' %}
+                            Küçük Talep
+                        {% else %}
+                            {{ project.project_type }}
+                        {% endif %}
+                    </dd>
+                    
+                    <dt class="col-sm-4">Adam-Gün:</dt>
+                    <dd class="col-sm-8">{{ project.mandays }}</dd>
+                    
+                    {% if project.extra_mandays and project.extra_mandays > 0 %}
+                    <dt class="col-sm-4">Ek Adam-Gün:</dt>
+                    <dd class="col-sm-8">{{ project.extra_mandays }}</dd>
+                    
+                    <dt class="col-sm-4">Toplam Adam-Gün:</dt>
+                    <dd class="col-sm-8">{{ project.mandays + project.extra_mandays }}</dd>
+                    
+                    {% if project.extra_mandays_reason %}
+                    <dt class="col-sm-4">Ek Süre Nedeni:</dt>
+                    <dd class="col-sm-8">{{ project.extra_mandays_reason }}</dd>
+                    {% endif %}
+                    {% endif %}
+                    
+                    <dt class="col-sm-4">Durum:</dt>
+                    <dd class="col-sm-8">
+                        {% if project.completed %}
+                        <span class="badge bg-success">Tamamlandı</span>
+                        {% else %}
+                        <span class="badge bg-warning">Devam Ediyor</span>
+                        {% endif %}
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Bulgular Özeti</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    {% set severity_counts = project.findings_by_severity() %}
+                    <div class="col-3">
+                        <div class="text-danger display-6">{{ severity_counts['Critical'] }}</div>
+                        <p>Kritik</p>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-warning display-6">{{ severity_counts['High'] }}</div>
+                        <p>Yüksek</p>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-primary display-6">{{ severity_counts['Medium'] }}</div>
+                        <p>Orta</p>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-success display-6">{{ severity_counts['Low'] }}</div>
+                        <p>Düşük</p>
+                    </div>
+                </div>
+                <hr>
+                <div class="text-center">
+                    <div class="display-6">{{ project.findings|length }}</div>
+                    <p>Toplam Bulgular</p>
+                </div>
+                
+                <div class="d-grid gap-2 mt-3">
+                    <a href="{{ url_for('finding.new', project_id=project.id) }}" class="btn btn-primary">Yeni Bulgu Ekle</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Bulgular</h5>
+                <a href="{{ url_for('finding.new', project_id=project.id) }}" class="btn btn-sm btn-primary">Bulgu Ekle</a>
+            </div>
+            <div class="card-body">
+                {% if project.findings %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>İsim</th>
+                                <th>Önem Seviyesi</th>
+                                <th>Durum</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for finding in project.findings %}
+                            <tr>
+                                <td>{{ finding.id }}</td>
+                                <td>{{ finding.name }}</td>
+                                <td>
+                                    {% if finding.severity == 'Critical' %}
+                                    <span class="badge bg-danger">Kritik</span>
+                                    {% elif finding.severity == 'High' %}
+                                    <span class="badge bg-warning">Yüksek</span>
+                                    {% elif finding.severity == 'Medium' %}
+                                    <span class="badge bg-primary">Orta</span>
+                                    {% else %}
+                                    <span class="badge bg-success">Düşük</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if finding.status == 'Open' %}
+                                    <span class="badge bg-danger">Açık</span>
+                                    {% else %}
+                                    <span class="badge bg-success">Kapalı</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('finding.edit', id=finding.id) }}" class="btn btn-sm btn-warning">Düzenle</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    Bu proje için henüz kayıtlı bulgu yok. Başlamak için <a href="{{ url_for('finding.new', project_id=project.id) }}">bir bulgu ekleyin</a>.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

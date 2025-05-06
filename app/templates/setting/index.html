@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+
+{% block title %}Sistem Ayarları - Sızma Testi Yönetimi{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12 d-flex justify-content-between align-items-center mb-4">
+        <h1>Sistem Ayarları</h1>
+        <div>
+            <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Ana Sayfaya Dön</a>
+        </div>
+    </div>
+</div>
+
+{% include 'includes/flash_messages.html' %}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Sistem Ayarları</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('setting.index') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">E-posta (SMTP) Ayarları</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        {{ form.mail_server.label(class="form-label") }}
+                                        {{ form.mail_server(class="form-control") }}
+                                        {% if form.mail_server.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.mail_server.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                        <small class="form-text text-muted">Örnek: smtp.gmail.com</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        {{ form.mail_port.label(class="form-label") }}
+                                        {{ form.mail_port(class="form-control") }}
+                                        {% if form.mail_port.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.mail_port.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                        <small class="form-text text-muted">Örnek: 587 (TLS) veya 465 (SSL)</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        {{ form.mail_use_tls(class="form-check-input") }}
+                                        {{ form.mail_use_tls.label(class="form-check-label") }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        {{ form.mail_use_ssl(class="form-check-input") }}
+                                        {{ form.mail_use_ssl.label(class="form-check-label") }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        {{ form.mail_username.label(class="form-label") }}
+                                        {{ form.mail_username(class="form-control") }}
+                                        {% if form.mail_username.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.mail_username.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        {{ form.mail_password.label(class="form-label") }}
+                                        {{ form.mail_password(class="form-control") }}
+                                        {% if form.mail_password.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.mail_password.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                        <small class="form-text text-muted">Şifreyi değiştirmek istiyorsanız girin, aksi takdirde boş bırakın.</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        {{ form.mail_default_sender.label(class="form-label") }}
+                                        {{ form.mail_default_sender(class="form-control") }}
+                                        {% if form.mail_default_sender.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.mail_default_sender.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        {{ form.admin_email.label(class="form-label") }}
+                                        {{ form.admin_email(class="form-control") }}
+                                        {% if form.admin_email.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.admin_email.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">Uygulama Ayarları</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        {{ form.app_url.label(class="form-label") }}
+                                        {{ form.app_url(class="form-control") }}
+                                        {% if form.app_url.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.app_url.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                        <small class="form-text text-muted">Örnek: http://localhost:5001</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        {{ form.reminder_send_time.label(class="form-label") }}
+                                        {{ form.reminder_send_time(class="form-control") }}
+                                        {% if form.reminder_send_time.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.reminder_send_time.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                        <small class="form-text text-muted">24 saat formatında, örnek: 09:00</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group mt-4 text-center">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block title %}Tüm Bulgular - Sızma Testi Yönetimi{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12 d-flex justify-content-between align-items-center mb-4">
+        <h1>Tüm Bulgular</h1>
+        <div>
+            <a href="{{ url_for('project.index') }}" class="btn btn-secondary">Projelere Dön</a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Bulgular</h5>
+            </div>
+            <div class="card-body">
+                {% if findings %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Proje</th>
+                                <th>Şirket</th>
+                                <th>İsim</th>
+                                <th>Önem Seviyesi</th>
+                                <th>Durum</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for finding in findings %}
+                            <tr>
+                                <td>{{ finding.id }}</td>
+                                <td>{{ finding.project.name }}</td>
+                                <td>{{ finding.project.company.name }}</td>
+                                <td>{{ finding.name }}</td>
+                                <td>
+                                    {% if finding.severity == 'Critical' %}
+                                    <span class="badge bg-danger">Kritik</span>
+                                    {% elif finding.severity == 'High' %}
+                                    <span class="badge bg-warning">Yüksek</span>
+                                    {% elif finding.severity == 'Medium' %}
+                                    <span class="badge bg-primary">Orta</span>
+                                    {% else %}
+                                    <span class="badge bg-success">Düşük</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if finding.status == 'Open' %}
+                                    <span class="badge bg-danger">Açık</span>
+                                    {% else %}
+                                    <span class="badge bg-success">Kapalı</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('finding.edit', id=finding.id) }}" class="btn btn-sm btn-warning">Düzenle</a>
+                                        <a href="{{ url_for('finding.index', project_id=finding.project_id) }}" class="btn btn-sm btn-info">Projeye Git</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    Henüz kayıtlı bulgu yok.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Bulgular Özeti</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    {% set critical_count = findings|selectattr('severity', 'eq', 'Critical')|list|length %}
+                    {% set high_count = findings|selectattr('severity', 'eq', 'High')|list|length %}
+                    {% set medium_count = findings|selectattr('severity', 'eq', 'Medium')|list|length %}
+                    {% set low_count = findings|selectattr('severity', 'eq', 'Low')|list|length %}
+                    
+                    <div class="col-3">
+                        <div class="text-danger display-6">{{ critical_count }}</div>
+                        <p>Kritik</p>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-warning display-6">{{ high_count }}</div>
+                        <p>Yüksek</p>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-primary display-6">{{ medium_count }}</div>
+                        <p>Orta</p>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-success display-6">{{ low_count }}</div>
+                        <p>Düşük</p>
+                    </div>
+                </div>
+                <hr>
+                <div class="text-center">
+                    <div class="display-6">{{ findings|length }}</div>
+                    <p>Toplam Bulgular</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Durum Özeti</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="text-danger display-6">{{ findings|selectattr('status', 'eq', 'Open')|list|length }}</div>
+                        <p>Açık Bulgular</p>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-success display-6">{{ findings|selectattr('status', 'eq', 'Closed')|list|length }}</div>
+                        <p>Kapalı Bulgular</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Sızma Testi Yönetimi{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <h1>{{ title }}</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.name.label(class="form-label") }}
+                        {{ form.name(class="form-control") }}
+                        {% if form.name.errors %}
+                            <div class="text-danger">
+                                {% for error in form.name.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.company_id.label(class="form-label") }}
+                        {{ form.company_id(class="form-select") }}
+                        {% if form.company_id.errors %}
+                            <div class="text-danger">
+                                {% for error in form.company_id.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.manager.label(class="form-label") }}
+                        {{ form.manager(class="form-control") }}
+                        {% if form.manager.errors %}
+                            <div class="text-danger">
+                                {% for error in form.manager.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.pentest_date.label(class="form-label") }}
+                        {{ form.pentest_date(class="form-control", type="date") }}
+                        {% if form.pentest_date.errors %}
+                            <div class="text-danger">
+                                {% for error in form.pentest_date.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.project_type.label(class="form-label") }}
+                        {{ form.project_type(class="form-select") }}
+                        {% if form.project_type.errors %}
+                            <div class="text-danger">
+                                {% for error in form.project_type.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.mandays.label(class="form-label") }}
+                        {{ form.mandays(class="form-control") }}
+                        {% if form.mandays.errors %}
+                            <div class="text-danger">
+                                {% for error in form.mandays.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.extra_mandays.label(class="form-label") }}
+                        {{ form.extra_mandays(class="form-control") }}
+                        {% if form.extra_mandays.errors %}
+                            <div class="text-danger">
+                                {% for error in form.extra_mandays.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.extra_mandays_reason.label(class="form-label") }}
+                        {{ form.extra_mandays_reason(class="form-control", rows=3) }}
+                        {% if form.extra_mandays_reason.errors %}
+                            <div class="text-danger">
+                                {% for error in form.extra_mandays_reason.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        {{ form.completed(class="form-check-input") }}
+                        {{ form.completed.label(class="form-check-label") }}
+                        {% if form.completed.errors %}
+                            <div class="text-danger">
+                                {% for error in form.completed.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.tags.label(class="form-label") }}
+                        {{ form.tags(class="form-control") }}
+                        {% if form.tags.errors %}
+                            <div class="text-danger">
+                                {% for error in form.tags.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">{{ form.tags.description }}</small>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        {{ form.is_backlog(class="form-check-input") }}
+                        {{ form.is_backlog.label(class="form-check-label") }}
+                        {% if form.is_backlog.errors %}
+                            <div class="text-danger">
+                                {% for error in form.is_backlog.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.priority.label(class="form-label") }}
+                        {{ form.priority(class="form-control") }}
+                        {% if form.priority.errors %}
+                            <div class="text-danger">
+                                {% for error in form.priority.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">{{ form.priority.description }}</small>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('project.index') }}" class="btn btn-secondary">İptal</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Yardım</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Proje Adı:</strong> Projenin adını girin.</p>
+                <p><strong>Şirket:</strong> Bu projenin ait olduğu şirketi seçin.</p>
+                <p><strong>Proje Yöneticisi:</strong> Proje yöneticisinin adını girin.</p>
+                <p><strong>Pentest Tarihi:</strong> Sızma testinin başlayacağı tarihi seçin.</p>
+                <p><strong>Proje Türü:</strong> Tam bir proje mi yoksa daha küçük bir talep mi olduğunu seçin.</p>
+                <p><strong>Adam-Gün:</strong> Bu proje için ayrılan adam-gün sayısını girin.</p>
+                <p><strong>Ek Adam-Gün:</strong> Beklenmeyen durumlar nedeniyle harcanan ek adam-gün sayısını girin.</p>
+                <p><strong>Ek Adam-Gün Nedeni:</strong> Ek adam-günün neden harcandığını açıklayın (örn. ağ problemleri).</p>
+                <p><strong>Tamamlandı:</strong> Proje tamamlandıysa bu kutuyu işaretleyin.</p>
+                <p><strong>Etiketler:</strong> Projeyi kategorize etmek için etiketler ekleyin (ör: Mobil Şube, Internet Şube).</p>
+                <p><strong>Backlog Projesi:</strong> Henüz tarih belirlenmemiş, planlanacak bir proje ise işaretleyin.</p>
+                <p><strong>Öncelik:</strong> Backlog içindeki önceliği belirleyin (0-10, 10 en yüksek).</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Şirketler - Sızma Testi Yönetimi{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12 d-flex justify-content-between align-items-center mb-4">
+        <h1>Şirketler</h1>
+        <a href="{{ url_for('company.new') }}" class="btn btn-primary">Yeni Şirket Ekle</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        {% if companies %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>İsim</th>
+                        <th>Toplam Adam-Gün</th>
+                        <th>Kullanılan Adam-Gün</th>
+                        <th>Kalan Adam-Gün</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for company in companies %}
+                    <tr>
+                        <td>{{ company.id }}</td>
+                        <td>{{ company.name }}</td>
+                        <td>{{ company.total_mandays }}</td>
+                        <td>{{ company.total_mandays - company.remaining_mandays() }}</td>
+                        <td>{{ company.remaining_mandays() }}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('company.view', id=company.id) }}" class="btn btn-sm btn-info">Görüntüle</a>
+                                <a href="{{ url_for('company.edit', id=company.id) }}" class="btn btn-sm btn-warning">Düzenle</a>
+                                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ company.id }}">Sil</button>
+                            </div>
+                            
+                            <!-- Delete Confirmation Modal -->
+                            <div class="modal fade" id="deleteModal{{ company.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ company.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="deleteModalLabel{{ company.id }}">Silme İşlemini Onayla</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <strong>{{ company.name }}</strong> şirketini silmek istediğinize emin misiniz? Bu işlem geri alınamaz. İlişkili tüm projeler ve bulgular da silinecektir.
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                                            <form action="{{ url_for('company.delete', id=company.id) }}" method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-danger">Sil</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            Hiç şirket bulunamadı. Başlamak için <a href="{{ url_for('company.new') }}">yeni bir şirket ekleyin</a>.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

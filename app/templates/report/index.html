@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}Raporlar - Sızma Testi Yönetimi{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <h1 class="mb-4">Raporlar ve Analizler</h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5>Özel Raporlar</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5>Ek Adam-Gün Raporu</h5>
+                            </div>
+                            <div class="card-body">
+                                <p>
+                                    Beklenmeyen sebeplerle planlanan adam-gün süresinden daha fazla süre harcanan projelerin listesi ve istatistikleri.
+                                </p>
+                            </div>
+                            <div class="card-footer">
+                                <a href="{{ url_for('report.extra_mandays_report') }}" class="btn btn-primary">Raporu Görüntüle</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Diğer özel raporlar için buraya daha fazla kart eklenebilir -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Şirket Genel Bakış</h5>
+            </div>
+            <div class="card-body">
+                {% if company_stats %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Şirket</th>
+                                <th>Toplam Adam-Gün</th>
+                                <th>Kullanılan Adam-Gün</th>
+                                <th>Kalan Adam-Gün</th>
+                                <th>Tamamlanan Projeler</th>
+                                <th>Devam Eden Projeler</th>
+                                <th>Toplam Bulgular</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for company in company_stats %}
+                            <tr>
+                                <td>{{ company.name }}</td>
+                                <td>{{ company.total_mandays }}</td>
+                                <td>{{ company.used_mandays }}</td>
+                                <td>{{ company.remaining_mandays }}</td>
+                                <td>{{ company.completed_projects }}</td>
+                                <td>{{ company.ongoing_projects }}</td>
+                                <td>{{ company.total_findings }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('report.company_report', company_id=company.id) }}" class="btn btn-sm btn-info">Detaylı Rapor</a>
+                                        <a href="{{ url_for('report.export_company_report', company_id=company.id) }}" class="btn btn-sm btn-success">CSV Olarak İndir</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    Hiç şirket bulunamadı. Başlamak için <a href="{{ url_for('company.new') }}">bir şirket ekleyin</a>.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    {% for company in company_stats %}
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>{{ company.name }} - Bulgu Önem Seviyesi Dağılımı</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-3">
+                        <div class="text-danger display-6">{{ company.findings_by_severity.Critical }}</div>
+                        <p>Kritik</p>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-warning display-6">{{ company.findings_by_severity.High }}</div>
+                        <p>Yüksek</p>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-primary display-6">{{ company.findings_by_severity.Medium }}</div>
+                        <p>Orta</p>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-success display-6">{{ company.findings_by_severity.Low }}</div>
+                        <p>Düşük</p>
+                    </div>
+                </div>
+                <hr>
+                <div class="progress mt-3" style="height: 30px;">
+                    {% set critical_percentage = (company.findings_by_severity.Critical / company.total_findings * 100) if company.total_findings > 0 else 0 %}
+                    {% set high_percentage = (company.findings_by_severity.High / company.total_findings * 100) if company.total_findings > 0 else 0 %}
+                    {% set medium_percentage = (company.findings_by_severity.Medium / company.total_findings * 100) if company.total_findings > 0 else 0 %}
+                    {% set low_percentage = (company.findings_by_severity.Low / company.total_findings * 100) if company.total_findings > 0 else 0 %}
+                    
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ critical_percentage }}%;"
+                         aria-valuenow="{{ critical_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                        {% if critical_percentage > 5 %}Kritik{% endif %}
+                    </div>
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ high_percentage }}%;"
+                         aria-valuenow="{{ high_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                        {% if high_percentage > 5 %}Yüksek{% endif %}
+                    </div>
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ medium_percentage }}%;"
+                         aria-valuenow="{{ medium_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                        {% if medium_percentage > 5 %}Orta{% endif %}
+                    </div>
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ low_percentage }}%;"
+                         aria-valuenow="{{ low_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                        {% if low_percentage > 5 %}Düşük{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %} 

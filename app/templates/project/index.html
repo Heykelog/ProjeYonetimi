@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+
+{% block title %}Projeler - Sızma Testi Yönetimi{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12 d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fs-2">{{ title|default('Projeler') }}</h1>
+        <div>
+            <a href="{{ url_for('project.backlog') }}" class="btn btn-outline-primary"><i class="fas fa-tasks me-1"></i> Backlog</a>
+            <a href="{{ url_for('project.new') }}" class="btn btn-primary"><i class="fas fa-plus me-1"></i> Yeni Proje Ekle</a>
+        </div>
+    </div>
+</div>
+
+<!-- Filtreler -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fs-5"><i class="fas fa-filter me-2"></i>Filtreler</h5>
+                <button id="clear-filters" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-eraser me-1"></i>Temizle
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold"><i class="fas fa-tags me-1"></i> Etiketler</label>
+                            <div id="tag-filters" class="d-flex flex-wrap"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold"><i class="fas fa-filter me-1"></i> Durum</label>
+                            <div class="btn-group">
+                                <button data-filter="status" data-value="all" class="btn btn-sm btn-outline-secondary status-filter active">Tümü</button>
+                                <button data-filter="status" data-value="active" class="btn btn-sm btn-outline-secondary status-filter">Devam Eden</button>
+                                <button data-filter="status" data-value="completed" class="btn btn-sm btn-outline-secondary status-filter">Tamamlanan</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        {% if projects %}
+        <div class="table-responsive">
+            <table id="projects-table" class="table table-hover border">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>İsim</th>
+                        <th>Şirket</th>
+                        <th>Yönetici</th>
+                        <th>Pentest Tarihi</th>
+                        <th>Tür</th>
+                        <th>Adam-Gün</th>
+                        <th>Durum</th>
+                        <th>Etiketler</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for project in projects %}
+                    <tr class="project-row" 
+                        data-completed="{{ project.completed|lower }}"
+                        data-tags="{{ project.get_tags_list()|join(',') }}">
+                        <td>{{ project.id }}</td>
+                        <td><strong>{{ project.name }}</strong></td>
+                        <td>{{ project.company.name }}</td>
+                        <td>{{ project.manager }}</td>
+                        <td>{{ project.pentest_date.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            {% if project.project_type == 'Project' %}
+                                <span class="badge bg-light text-dark border">Proje</span>
+                            {% elif project.project_type == 'Small Request' %}
+                                <span class="badge bg-light text-dark border">Küçük Talep</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark border">{{ project.project_type }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ project.mandays }}
+                            {% if project.extra_mandays and project.extra_mandays > 0 %}
+                                / {{ project.mandays + project.extra_mandays }}
+                                <i class="fas fa-info-circle text-muted" title="Ek adam-gün: {{ project.extra_mandays }} ({{ project.extra_mandays_reason }})"></i>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if project.completed %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">Tamamlandı</span>
+                            {% else %}
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Devam Ediyor</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if project.tags %}
+                            {% for tag in project.get_tags_list() %}
+                            <a href="#" class="badge bg-light text-dark border text-decoration-none tag-badge" data-tag="{{ tag }}">{{ tag }}</a>
+                            {% endfor %}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('project.view', id=project.id) }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ url_for('project.edit', id=project.id) }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{{ url_for('finding.index', project_id=project.id) }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-search"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ project.id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Delete Confirmation Modal -->
+                            <div class="modal fade" id="deleteModal{{ project.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ project.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="deleteModalLabel{{ project.id }}">Silme İşlemini Onayla</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <strong>{{ project.name }}</strong> projesini silmek istediğinize emin misiniz? Bu işlem geri alınamaz. İlişkili tüm bulgular da silinecektir.
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                                            <form action="{{ url_for('project.delete', id=project.id) }}" method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-danger">Sil</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            Hiç proje bulunamadı. Başlamak için <a href="{{ url_for('project.new') }}">yeni bir proje ekleyin</a>.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Filtre durumunu saklamak için
+        const activeFilters = {
+            tags: [],
+            status: 'all'
+        };
+
+        // Tüm etiketleri topla
+        const allTags = new Set();
+        document.querySelectorAll('.tag-badge').forEach(tag => {
+            allTags.add(tag.dataset.tag);
+        });
+        
+        // Etiket filtrelerini oluştur
+        const tagFiltersContainer = document.getElementById('tag-filters');
+        if (tagFiltersContainer && allTags.size > 0) {
+            let filterHtml = '';
+            allTags.forEach(tag => {
+                filterHtml += `<button class="btn btn-sm btn-outline-secondary me-1 mb-1 tag-filter" data-tag="${tag}">${tag}</button>`;
+            });
+            tagFiltersContainer.innerHTML = filterHtml;
+        } else if (tagFiltersContainer) {
+            tagFiltersContainer.innerHTML = '<p class="text-muted mb-0">Henüz etiket bulunmuyor.</p>';
+        }
+
+        // Etiket filtreleme işlevselliği
+        document.querySelectorAll('.tag-filter').forEach(button => {
+            button.addEventListener('click', function() {
+                const tag = this.dataset.tag;
+                
+                // Etiket zaten aktif filtreler içinde mi kontrol et
+                const tagIndex = activeFilters.tags.indexOf(tag);
+                
+                if (tagIndex === -1) {
+                    // Aktif değilse ekle
+                    activeFilters.tags.push(tag);
+                    this.classList.remove('btn-outline-secondary');
+                    this.classList.add('btn-secondary');
+                } else {
+                    // Aktifse çıkar
+                    activeFilters.tags.splice(tagIndex, 1);
+                    this.classList.remove('btn-secondary');
+                    this.classList.add('btn-outline-secondary');
+                }
+                
+                applyFilters();
+            });
+        });
+
+        // Etiket rozeti tıklama (tablodaki etiketler)
+        document.querySelectorAll('.tag-badge').forEach(badge => {
+            badge.addEventListener('click', function(e) {
+                e.preventDefault();
+                const tag = this.dataset.tag;
+                
+                // İlgili filtreyi bul ve tıkla
+                const filterButton = document.querySelector(`.tag-filter[data-tag="${tag}"]`);
+                if (filterButton) {
+                    filterButton.click();
+                }
+            });
+        });
+
+        // Durum filtreleme
+        document.querySelectorAll('.status-filter').forEach(button => {
+            button.addEventListener('click', function() {
+                const status = this.dataset.value;
+                
+                // Aktif sınıfını diğer status filtrelerinden kaldır
+                document.querySelectorAll('.status-filter').forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.classList.add('btn-outline-secondary');
+                });
+                
+                // Bu filtreyi aktifleştir
+                this.classList.add('active');
+                this.classList.remove('btn-outline-secondary');
+                this.classList.add('btn-secondary');
+                
+                activeFilters.status = status;
+                applyFilters();
+            });
+        });
+
+        // Filtreleri temizle butonu
+        document.getElementById('clear-filters').addEventListener('click', function() {
+            // Etiket filtrelerini sıfırla
+            activeFilters.tags = [];
+            document.querySelectorAll('.tag-filter').forEach(btn => {
+                btn.classList.remove('btn-secondary');
+                btn.classList.add('btn-outline-secondary');
+            });
+            
+            // Durum filtresini "Tümü" olarak ayarla
+            activeFilters.status = 'all';
+            document.querySelectorAll('.status-filter').forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.add('btn-outline-secondary');
+            });
+            document.querySelector('.status-filter[data-value="all"]').classList.remove('btn-outline-secondary');
+            document.querySelector('.status-filter[data-value="all"]').classList.add('active', 'btn-secondary');
+            
+            applyFilters();
+        });
+
+        // Filtreleri uygula
+        function applyFilters() {
+            const projectRows = document.querySelectorAll('.project-row');
+            
+            projectRows.forEach(row => {
+                let showRow = true;
+                
+                // Etiket filtresi kontrolü
+                if (activeFilters.tags.length > 0) {
+                    const projectTags = row.dataset.tags.split(',').filter(t => t.length > 0);
+                    
+                    // En az bir eşleşen etiket olmalı
+                    const hasMatchingTag = activeFilters.tags.some(tag => projectTags.includes(tag));
+                    
+                    if (!hasMatchingTag) {
+                        showRow = false;
+                    }
+                }
+                
+                // Durum filtresi kontrolü
+                if (activeFilters.status !== 'all') {
+                    const isCompleted = row.dataset.completed === 'true';
+                    
+                    if (activeFilters.status === 'completed' && !isCompleted) {
+                        showRow = false;
+                    } else if (activeFilters.status === 'active' && isCompleted) {
+                        showRow = false;
+                    }
+                }
+                
+                // Görünürlüğü ayarla
+                row.style.display = showRow ? '' : 'none';
+            });
+            
+            // Görünür proje sayısını kontrol et
+            const visibleRows = document.querySelectorAll('.project-row:not([style*="display: none"])').length;
+            const table = document.getElementById('projects-table');
+            const noResults = document.querySelector('.no-results');
+            
+            if (visibleRows === 0) {
+                // Sonuç yoksa mesaj göster
+                if (!noResults) {
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-info mt-3 no-results';
+                    alertDiv.innerHTML = '<i class="fas fa-info-circle me-2"></i>Seçilen kriterlere uygun proje bulunamadı.';
+                    table.parentNode.appendChild(alertDiv);
+                }
+                table.style.display = 'none';
+            } else {
+                // Sonuç varsa tabloyu göster
+                if (noResults) {
+                    noResults.remove();
+                }
+                table.style.display = '';
+            }
+        }
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+
+{% block title %}Ana Sayfa - Sızma Testi Yönetimi{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h1 class="mb-4">Dashboard</h1>
+        <div class="btn-group">
+            <a href="{{ url_for('company.new') }}" class="btn btn-success"><i class="fas fa-building me-1"></i> Yeni Şirket</a>
+            <a href="{{ url_for('project.new') }}" class="btn btn-primary"><i class="fas fa-project-diagram me-1"></i> Yeni Proje</a>
+        </div>
+    </div>
+</div>
+
+<!-- Bilgi Kartları -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card border-primary">
+            <div class="card-body text-center">
+                <div class="row">
+                    <div class="col-md-4 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-building fa-3x text-primary"></i>
+                    </div>
+                    <div class="col-md-8 text-center text-md-start">
+                        <h3 class="display-6 fw-bold">{{ companies_count }}</h3>
+                        <p class="mb-0">Şirketler</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 text-center">
+                <a href="{{ url_for('company.index') }}" class="btn btn-sm btn-primary">Tümünü Gör</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <div class="row">
+                    <div class="col-md-4 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-project-diagram fa-3x text-success"></i>
+                    </div>
+                    <div class="col-md-8 text-center text-md-start">
+                        <h3 class="display-6 fw-bold">{{ projects_count }}</h3>
+                        <p class="mb-0">Projeler</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 text-center">
+                <a href="{{ url_for('project.index') }}" class="btn btn-sm btn-success">Tümünü Gör</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card border-info">
+            <div class="card-body text-center">
+                <div class="row">
+                    <div class="col-md-4 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-bug fa-3x text-info"></i>
+                    </div>
+                    <div class="col-md-8 text-center text-md-start">
+                        <h3 class="display-6 fw-bold">{{ findings_count }}</h3>
+                        <p class="mb-0">Toplam Bulgular</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 text-center">
+                <a href="{{ url_for('finding.all_findings') }}" class="btn btn-sm btn-info">Tümünü Gör</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card border-danger">
+            <div class="card-body text-center">
+                <div class="row">
+                    <div class="col-md-4 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+                    </div>
+                    <div class="col-md-8 text-center text-md-start">
+                        <h3 class="display-6 fw-bold">{{ critical_findings }}</h3>
+                        <p class="mb-0">Kritik/Yüksek Bulgular</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 text-center">
+                <a href="{{ url_for('finding.all_findings') }}" class="btn btn-sm btn-danger">Tümünü Gör</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Bugün Başlayan Pentestler -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-warning text-white">
+                <h5 class="mb-0"><i class="fas fa-calendar-day me-2"></i> Bugün Başlayan Pentestler</h5>
+            </div>
+            <div class="card-body">
+                {% if today_pentests %}
+                <div class="list-group">
+                    {% for project in today_pentests %}
+                    <a href="{{ url_for('project.view', id=project.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ project.name }}</strong>
+                            <small class="d-block text-muted">{{ project.company.name }} &bull; {{ project.manager }}</small>
+                        </div>
+                        <span class="badge rounded-pill bg-warning">{{ project.mandays }} A/G</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-center text-muted my-4">
+                    <i class="fas fa-check-circle fa-3x mb-3 d-block"></i>
+                    Bugün başlayan pentest bulunmuyor.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Uyarılar -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="fas fa-exclamation-circle me-2"></i> Uyarılar</h5>
+            </div>
+            <div class="card-body">
+                {% if low_mandays_companies %}
+                <h6 class="text-danger"><i class="fas fa-battery-quarter me-1"></i> Adam-Gün Havuzu Azalan Şirketler:</h6>
+                <div class="list-group mb-3">
+                    {% for company in low_mandays_companies %}
+                    <a href="{{ url_for('company.view', id=company.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>{{ company.name }}</div>
+                        <span class="badge bg-danger">{{ company.remaining_mandays()|round(1) }} / {{ company.total_mandays }} A/G</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-center text-muted my-4">
+                    <i class="fas fa-check-circle fa-3x mb-3 d-block"></i>
+                    Adam-gün havuzu kritik seviyede olan şirket bulunmuyor.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Yaklaşan Pentestler -->
+    <div class="col-md-7 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i> Yaklaşan Pentestler (Bir Hafta İçinde)</h5>
+            </div>
+            <div class="card-body">
+                {% if upcoming_pentests %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Proje</th>
+                                <th>Şirket</th>
+                                <th>Tarih</th>
+                                <th>A/G</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for project in upcoming_pentests %}
+                            <tr>
+                                <td>{{ project.name }}</td>
+                                <td>{{ project.company.name }}</td>
+                                <td>
+                                    {{ project.pentest_date.strftime('%d.%m.%Y') }}
+                                    {% if project.pentest_date == today %}
+                                    <span class="badge bg-danger">Bugün</span>
+                                    {% elif (project.pentest_date - today).days <= 1 %}
+                                    <span class="badge bg-warning">Yarın</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ project.mandays }}</td>
+                                <td>
+                                    <a href="{{ url_for('project.view', id=project.id) }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <form action="{{ url_for('project.send_reminder', id=project.id) }}" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-info">
+                                            <i class="fas fa-envelope"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center text-muted my-4">
+                    <i class="fas fa-check-circle fa-3x mb-3 d-block"></i>
+                    Bir hafta içinde planlanan pentest bulunmuyor.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Şirketlere Göre Bulgular -->
+    <div class="col-md-5 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i> En Çok Bulguya Sahip Şirketler</h5>
+            </div>
+            <div class="card-body">
+                {% if company_findings %}
+                <div class="list-group mb-3">
+                    {% for item in company_findings %}
+                    <a href="{{ url_for('company.view', id=item.company.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>{{ item.company.name }}</div>
+                        <span class="badge bg-success rounded-pill">{{ item.findings }} bulgu</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-center text-muted my-4">
+                    <i class="fas fa-chart-bar fa-3x mb-3 d-block"></i>
+                    Henüz kayıtlı bulgu bulunmuyor.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- En Son Eklenen Projeler -->
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-clock me-2"></i> En Son Eklenen Projeler</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_projects %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped">
+                        <thead>
+                            <tr>
+                                <th>Proje Adı</th>
+                                <th>Şirket</th>
+                                <th>Yönetici</th>
+                                <th>Pentest Tarihi</th>
+                                <th>Durum</th>
+                                <th>A/G</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for project in recent_projects %}
+                            <tr>
+                                <td>{{ project.name }}</td>
+                                <td>{{ project.company.name }}</td>
+                                <td>{{ project.manager }}</td>
+                                <td>{{ project.pentest_date.strftime('%d.%m.%Y') }}</td>
+                                <td>
+                                    {% if project.completed %}
+                                    <span class="badge bg-success">Tamamlandı</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Devam Ediyor</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ project.mandays }}
+                                    {% if project.extra_mandays and project.extra_mandays > 0 %}
+                                    <span class="badge bg-info" title="Ek: {{ project.extra_mandays }}">+{{ project.extra_mandays }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('project.view', id=project.id) }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center text-muted my-4">
+                    <i class="fas fa-folder-open fa-3x mb-3 d-block"></i>
+                    Henüz proje bulunmuyor. <a href="{{ url_for('project.new') }}">Yeni bir proje ekleyin</a>.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

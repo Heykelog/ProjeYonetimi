@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Sızma Testi Yönetimi{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <h1>{{ title }}</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.name.label(class="form-label") }}
+                        {{ form.name(class="form-control") }}
+                        {% if form.name.errors %}
+                            <div class="text-danger">
+                                {% for error in form.name.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.total_mandays.label(class="form-label") }}
+                        {{ form.total_mandays(class="form-control") }}
+                        {% if form.total_mandays.errors %}
+                            <div class="text-danger">
+                                {% for error in form.total_mandays.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('company.index') }}" class="btn btn-secondary">İptal</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Yardım</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Şirket Adı:</strong> Şirketin adını girin.</p>
+                <p><strong>Toplam Adam-Gün:</strong> Şirketin sızma testi hizmetleri için satın aldığı toplam adam-gün sayısını girin.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
