@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}Proje Raporu - Sızma Testi Yönetimi{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Proje Raporu</h1>
+            <a href="{{ url_for('report.export_projects_report', company_id=selected_company_id, project_type=selected_project_type) }}" class="btn btn-outline-primary">
+                <i class="fas fa-file-csv"></i> CSV Olarak İndir
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Filtreler</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" action="{{ url_for('report.projects_report') }}" class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="company_id" class="form-label">Şirket</label>
+                        <select name="company_id" id="company_id" class="form-select">
+                            <option value="">Tüm Şirketler</option>
+                            {% for company in companies %}
+                            <option value="{{ company.id }}" {% if selected_company_id == company.id %}selected{% endif %}>
+                                {{ company.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="project_type" class="form-label">Proje Türü</label>
+                        <select name="project_type" id="project_type" class="form-select">
+                            <option value="">Tüm Türler</option>
+                            <option value="Proje" {% if selected_project_type == "Proje" %}selected{% endif %}>Normal Proje</option>
+                            <option value="Küçük Talep" {% if selected_project_type == "Küçük Talep" %}selected{% endif %}>Küçük Talep</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end mb-3">
+                        <button type="submit" class="btn btn-primary me-2">Filtrele</button>
+                        <a href="{{ url_for('report.projects_report') }}" class="btn btn-outline-primary">Filtreleri Temizle</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Genel İstatistikler</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h3 class="display-4">{{ total_projects }}</h3>
+                                <p class="lead mb-0">Toplam Proje</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h3 class="display-4">{{ total_mandays }}</h3>
+                                <p class="lead mb-0">Toplam Adam/Gün</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h3 class="display-4">{{ "%0.2f"|format(total_mandays / total_projects) if total_projects > 0 else 0 }}</h3>
+                                <p class="lead mb-0">Ortalama Adam/Gün</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Proje Türlerine Göre Dağılım</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for type, stats in stats_by_type.items() %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header text-center">
+                                <h5>{{ type }}</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <h3 class="display-5">{{ stats.count }}</h3>
+                                        <p class="lead mb-0">Proje Sayısı</p>
+                                    </div>
+                                    <div class="col-6">
+                                        <h3 class="display-5">{{ stats.total_mandays }}</h3>
+                                        <p class="lead mb-0">Toplam Adam/Gün</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <a href="{{ url_for('report.projects_report', project_type=type) }}" class="btn btn-outline-primary w-100">
+                                    Bu türdeki projeleri göster
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Proje Listesi</h5>
+            </div>
+            <div class="card-body">
+                {% if projects %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Proje Adı</th>
+                                <th>Şirket</th>
+                                <th>Yönetici</th>
+                                <th>Pentest Tarihi</th>
+                                <th>Proje Türü</th>
+                                <th>Planlanan A/G</th>
+                                <th>Ek A/G</th>
+                                <th>Toplam A/G</th>
+                                <th>Bulgular</th>
+                                <th>Durum</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for project in projects %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('project.view', id=project.id) }}" class="text-dark">{{ project.name }}</a>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('company.view', id=project.company.id) }}" class="text-dark">{{ project.company.name }}</a>
+                                </td>
+                                <td>{{ project.manager }}</td>
+                                <td>{{ project.pentest_date.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    <span class="badge bg-primary">
+                                        {{ project.project_type }}
+                                    </span>
+                                </td>
+                                <td>{{ project.mandays }}</td>
+                                <td>{{ project.extra_mandays or 0 }}</td>
+                                <td><strong>{{ project.mandays + (project.extra_mandays or 0) }}</strong></td>
+                                <td>{{ project.findings|length }}</td>
+                                <td>
+                                    <span class="badge {% if project.completed %}bg-primary{% else %}bg-secondary{% endif %}">
+                                        {% if project.completed %}Tamamlandı{% else %}Devam Ediyor{% endif %}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-secondary">
+                    Bu kriterlere uygun proje bulunamadı.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

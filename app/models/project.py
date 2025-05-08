@@ -10,7 +10,7 @@ class Project(db.Model):
     name = db.Column(db.String(100), nullable=False)
     manager = db.Column(db.String(100), nullable=False)
     pentest_date = db.Column(db.Date, nullable=True, default=datetime.utcnow)
-    project_type = db.Column(db.String(20), nullable=False)  # 'Project' or 'Small Request'
+    project_type = db.Column(db.String(20), nullable=False)  # 'Proje' or 'Küçük Talep'
     mandays = db.Column(db.Float, nullable=False, default=0)
     extra_mandays = db.Column(db.Float, nullable=True, default=0)
     extra_mandays_reason = db.Column(db.Text, nullable=True)
